@@ -5,7 +5,7 @@ import re
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -15,7 +15,8 @@ def get_tasks():
 
     url = f"{vikunja_base_url}/api/v1/tasks"
 
-    querystring = {"filter":"due_date < 2026-04-24 && done = false","sort_by":["priority","due_date"],"order_by":"desc"}
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    querystring = {"filter":"due_date < " + tomorrow + " && done = false","sort_by":["priority","due_date"],"order_by":"desc"}
 
     headers = {"authorization": f"Bearer {vikunja_token}"}
 
