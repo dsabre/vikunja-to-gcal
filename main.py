@@ -59,24 +59,49 @@ def get_service():
 
     return build("calendar", "v3", credentials=credentials)
 
+def find_existing_event(service, calendar_id, title, in_date):
+    """Returns the event if one with the same title exists in passed date, else None."""
+    time_min = f"{in_date}T00:00:00Z"
+    time_max = f"{in_date}T23:59:59Z"
+
+    result = service.events().list(
+        calendarId=calendar_id,
+        timeMin=time_min,
+        timeMax=time_max,
+        q=title,
+        singleEvents=True,
+    ).execute()
+
+    for event in result.get("items", []):
+        if event.get("summary") == title:
+            return event
+
+    return None
+
 def create_sequential_events(tasks):
     service = get_service()
     now = datetime.now(tz=timezone.utc)
     current_start = now
     calendar_id = os.getenv("GOOGLE_CALENDAR_ID", "primary")
+    today = date.today().isoformat()
 
     for [task, duration] in tasks:
         duration = duration if duration >= 15 else 15  # durata minima di 15 minuti
         current_end = current_start + timedelta(minutes=duration)
 
-        event = {
-            "summary": task["title"],
-            "start": {"dateTime": current_start.isoformat(), "timeZone": os.getenv("TZ", "UTC")},
-            "end":   {"dateTime": current_end.isoformat(),   "timeZone": os.getenv("TZ", "UTC")},
-        }
+        existing = find_existing_event(service, calendar_id, task["title"], today)
 
-        created = service.events().insert(calendarId=calendar_id, body=event).execute()
-        print(f"Creato: {created['summary']} → {created['htmlLink']}")
+        if existing:
+            print(f"Esiste già un evento per '{task['title']}' → {existing['htmlLink']}")
+        else:
+            event = {
+                "summary": task["title"],
+                "start": {"dateTime": current_start.isoformat(), "timeZone": os.getenv("TZ", "UTC")},
+                "end":   {"dateTime": current_end.isoformat(),   "timeZone": os.getenv("TZ", "UTC")},
+            }
+
+            created = service.events().insert(calendarId=calendar_id, body=event).execute()
+            print(f"Creato: {created['summary']} → {created['htmlLink']}")
 
         current_start = current_end  # il prossimo inizia dove finisce questo
 

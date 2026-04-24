@@ -1,6 +1,6 @@
 [project]
 name = "vikunja-to-gcal"
-version = "1.0.0"
+version = "1.1.0"
 description = "Fetches pending tasks from a Vikunja instance and schedules them as sequential events in Google Calendar, starting from the current time."
 readme = "README.md"
 requires-python = ">=3.14"
